@@ -1,0 +1,5 @@
+infra1:
+    juju:
+        disk: 20G
+        cpu: 4
+        mem: 4G

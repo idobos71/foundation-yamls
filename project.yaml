@@ -1,0 +1,21 @@
+# "Account Name" in the Salesforce(SF) opportunity
+customer: Fo Bar
+
+# project name like "<customer name>-<region name>" which is uniquely identifiable
+# it will be used as a git branch name, so no white space is allowed
+project: Baz
+
+# "Opportunity Number" in SF
+opportunity: OP-12345
+
+# openstack or kubernetes
+solution: openstack
+
+# converged, hyper-converged or custom
+arch: hyper-converged
+
+# "approved"(approved vendor BOMs) , "certified"(Ubuntu certified), or "custom"
+hw: approved
+
+# link to the step-by-step deployment guide, e.g. https://docs.google.com/a/canonical.com/document/d/XYZ...
+journal:

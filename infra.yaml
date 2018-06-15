@@ -1,0 +1,121 @@
+hosts:
+-   hostname: infra1
+    ip: 192.168.220.4
+    vm_zone: default
+maas_admin: admin
+maas_admin_password: admin
+maas_admin_email: m@g.com
+maas_admin_ssh_key: /home/ubuntu/.ssh/id_rsa.pub
+maas_vip: 192.168.220.4
+infra_extra_repositories:
+- ppa:maas/stable
+networks:
+  fabrics:
+    default:
+      vlans:
+        1234:
+          dhcp_on: true
+          mtu: 1500
+          space: oam-space
+          subnets:
+            oam:
+              cidr: 192.168.220.0/24
+              gateway_ip: 192.168.220.1
+              reserved:
+                infra_head:
+                  start_ip: 192.168.220.1
+                  end_ip:   192.168.220.25
+                dhcp:
+                  start_ip: 192.168.220.100
+                  end_ip:   192.168.220.254
+                  type: dynamic
+
+        100:
+          mtu: 1500
+          space: external-space
+          subnets:
+            external:
+              cidr: 10.0.1.0/24
+              reserved:
+                infra_head:
+                  start_ip: 10.0.1.1
+                  end_ip:   10.0.1.60
+                infra_tail:
+                  start_ip: 10.0.1.250
+                  end_ip:   10.0.1.254
+
+        200:
+          mtu: 1500
+          space: internal-space
+          subnets:
+            internal:
+              cidr: 10.0.2.0/24
+              reserved:
+                infra_head:
+                  start_ip: 10.0.2.1
+                  end_ip:   10.0.2.60
+                infra_tail:
+                  start_ip: 10.0.2.250
+                  end_ip:   10.0.2.254
+
+        300:
+          mtu: 1500
+          space: overlay-space
+          subnets:
+            overlay:
+              cidr: 10.0.3.0/24
+              reserved:
+                infra_head:
+                  start_ip: 10.0.3.1
+                  end_ip:   10.0.3.60
+                infra_tail:
+                  start_ip: 10.0.3.250
+                  end_ip:   10.0.3.254
+
+        400:
+          mtu: 1500
+          space: ceph-access-space
+          subnets:
+            ceph-access:
+              cidr: 10.0.4.0/24
+              reserved:
+                infra_head:
+                  start_ip: 10.0.4.1
+                  end_ip:   10.0.4.60
+                infra_tail:
+                  start_ip: 10.0.4.250
+                  end_ip:   10.0.4.254
+
+        500:
+          mtu: 1500
+          space: ceph-replica-space
+          subnets:
+            ceph-replica:
+              cidr: 10.0.5.0/24
+              reserved:
+                infra_head:
+                  start_ip: 10.0.5.1
+                  end_ip:   10.0.5.60
+                infra_tail:
+                  start_ip: 10.0.5.250
+                  end_ip:   10.0.5.254
+
+  spaces:
+    oam-space:
+      description: Operations, administration and management. PXE.
+    internal-space:
+      description: OpenStack Internal network.
+    external-space:
+      description: OpenStack External network.
+    overlay-space:
+      description: OpenStack Overlay network.
+    ceph-access-space:
+      description: Ceph access.
+    ceph-replica-space:
+      description: Ceph replication.
+tweaks:
+- nobond
+- nobridge
+- nomaasha
+- nopgha
+- nojujuha

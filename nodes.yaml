@@ -1,0 +1,50 @@
+options:
+    # timeout for enlisting and commissioning the nodes,
+    # in seconds. This can vary greatly based on hardware.
+    timeout: 1200
+nodes:
+    node1:
+      power_id: fe1
+      power_type: virsh
+      bmc_address: qemu+ssh://ubuntu@192.168.220.1/system
+      zone: default
+    node2:
+      power_id: fe2
+      power_type: virsh
+      bmc_address: qemu+ssh://ubuntu@192.168.220.1/system
+      zone: default
+    node3:
+      power_id: fe3
+      power_type: virsh
+      bmc_address: qemu+ssh://ubuntu@192.168.220.1/system
+      zone: default
+    node4:
+      power_id: fe4
+      power_type: virsh
+      bmc_address: qemu+ssh://ubuntu@192.168.220.1/system
+      zone: default
+    node5:
+      power_id: fe5
+      power_type: virsh
+      bmc_address: qemu+ssh://ubuntu@192.168.220.1/system
+      zone: default
+    node6:
+      power_id: fe6
+      power_type: virsh
+      bmc_address: qemu+ssh://ubuntu@192.168.220.1/system
+      zone: default
+    node7:
+      power_id: fe7
+      power_type: virsh
+      bmc_address: qemu+ssh://ubuntu@192.168.220.1/system
+      zone: default
+    node8:
+      power_id: fe8
+      power_type: virsh
+      bmc_address: qemu+ssh://ubuntu@192.168.220.1/system
+      zone: default
+    node9:
+      power_id: fe9
+      power_type: virsh
+      bmc_address: qemu+ssh://ubuntu@192.168.220.1/system
+      zone: default
