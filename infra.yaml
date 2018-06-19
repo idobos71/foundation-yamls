@@ -7,6 +7,10 @@ maas_admin_password: admin
 maas_admin_email: m@g.com
 maas_admin_ssh_key: /home/ubuntu/.ssh/id_rsa.pub
 maas_vip: 192.168.220.4
+maas_config:
+    dnssec_validation: 'no'
+    upstream_dns: 192.168.220.1
+    completed_intro: true
 infra_extra_repositories:
 - ppa:maas/stable
 networks:
