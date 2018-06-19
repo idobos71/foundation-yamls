@@ -1,0 +1,681 @@
+iseries: xenial
+variables:
+  openstack-origin:    &openstack-origin    cloud:xenial-pike
+  openstack-region:    &openstack-region    RegionOne
+  worker-multiplier:   &worker-multiplier   0.25
+  mysql-connections:   &mysql-connections   2000
+  data-port:           &data-port           br-data:ens3.100
+  oam-space:           &oam-space           oam-space
+  admin-space:         &admin-space         oam-space
+  public-space:        &public-space        oam-space
+  internal-space:      &internal-space      internal-space
+  overlay-space:       &overlay-space       overlay-space
+  ceph-public-space:   &ceph-public-space   ceph-access-space
+  ceph-cluster-space:  &ceph-cluster-space  ceph-replica-space
+  oam-space-constr:    &oam-space-constr    spaces=oam-space
+  ceph-access-constr:  &ceph-access-constr  spaces=ceph-access-space
+  osd-devices:         &osd-devices         /dev/sdb /dev/sdc
+  osd-journal:         &osd-journal
+  expected-osd-count:  &expected-osd-count  9
+  expected-mon-count:  &expected-mon-count  3
+  aodh-vip:            &aodh-vip            "192.168.220.10 10.0.2.10"
+  ceilometer-vip:      &ceilometer-vip      "192.168.220.11 10.0.2.11"
+  cinder-vip:          &cinder-vip          "192.168.220.12 10.0.2.12"
+  dashboard-vip:       &dashboard-vip       "10.0.2.22"
+  designate-vip:       &designate-vip       "192.168.220.13 10.0.2.13"
+  glance-vip:          &glance-vip          "192.168.220.14 10.0.2.14"
+  gnocchi-vip:         &gnocchi-vip         "192.168.220.15 10.0.2.15"
+  heat-vip:            &heat-vip            "192.168.220.16 10.0.2.16"
+  keystone-vip:        &keystone-vip        "192.168.220.17 10.0.2.17"
+  mysql-vip:           &mysql-vip           "192.168.220.18"
+  neutron-api-vip:     &neutron-api-vip     "192.168.220.19 10.0.2.19"
+  nova-cc-vip:         &nova-cc-vip         "192.168.220.20 10.0.2.20"
+  rados-gateway-vip:   &rados-gateway-vip   "192.168.220.21 10.0.2.21"
+  ntp-source:          &ntp-source          "ntp.ubuntu.com"
+  haproxy-server-timeout: &haproxy-server-timeout 90000
+  haproxy-client-timeout: &haproxy-client-timeout 90000
+  haproxy-queue-timeout: &haproxy-queue-timeout 9000
+  haproxy-connect-timeout: &haproxy-connect-timeout 9000
+machines:
+  "0":
+    constraints: tags=foundation-nodes
+    series: xenial
+  "1":
+    constraints: tags=foundation-nodes
+    series: xenial
+  "2":
+    constraints: tags=foundation-nodes
+    series: xenial
+  "3":
+    constraints: tags=foundation-nodes
+    series: xenial
+  "4":
+    constraints: tags=foundation-nodes
+    series: xenial
+  "5":
+    constraints: tags=foundation-nodes
+    series: xenial
+  "6":
+    constraints: tags=foundation-nodes
+    series: xenial
+  "7":
+    constraints: tags=foundation-nodes
+    series: xenial
+  "8":
+    constraints: tags=foundation-nodes
+    series: xenial
+applications:
+  hacluster-aodh:
+    charm: cs:~openstack-charmers-next/xenial/hacluster
+    options:
+      cluster_count: 3
+  hacluster-cinder:
+    charm: cs:~openstack-charmers-next/xenial/hacluster
+    options:
+      cluster_count: 3
+  hacluster-glance:
+    charm: cs:~openstack-charmers-next/xenial/hacluster
+    options:
+      cluster_count: 3
+  hacluster-gnocchi:
+    charm: cs:~openstack-charmers-next/xenial/hacluster
+    options:
+      cluster_count: 3
+  hacluster-horizon:
+    charm: cs:~openstack-charmers-next/xenial/hacluster
+    options:
+      cluster_count: 3
+  hacluster-keystone:
+    charm: cs:~openstack-charmers-next/xenial/hacluster
+    options:
+      cluster_count: 3
+  hacluster-neutron:
+    charm: cs:~openstack-charmers-next/xenial/hacluster
+    options:
+      cluster_count: 3
+  hacluster-nova:
+    charm: cs:~openstack-charmers-next/xenial/hacluster
+    options:
+      cluster_count: 3
+  hacluster-mysql:
+    charm: cs:~openstack-charmers-next/xenial/hacluster
+    options:
+      cluster_count: 3
+  hacluster-radosgw:
+    charm: cs:~openstack-charmers-next/xenial/hacluster
+    options:
+      cluster_count: 3
+  hacluster-designate:
+    charm: cs:~openstack-charmers-next/xenial/hacluster
+    options:
+      cluster_count: 3
+  hacluster-heat:
+    charm: cs:~openstack-charmers-next/xenial/hacluster
+    options:
+      cluster_count: 3
+  hacluster-ceilometer:
+    charm: cs:~openstack-charmers-next/xenial/hacluster
+    options:
+      cluster_count: 3
+  ceph-mon:
+    charm: cs:~openstack-charmers-next/xenial/ceph-mon
+    num_units: 3
+    bindings:
+      "": *oam-space
+      public: *ceph-public-space
+    options:
+      expected-osd-count: *expected-osd-count
+      source: *openstack-origin
+      monitor-count: *expected-mon-count
+      customize-failure-domain: True
+    to:
+    - lxd:0
+    - lxd:1
+    - lxd:2
+  ceph-osd:
+    charm: cs:~chris.macnaughton/ceph-osd-7
+    num_units: 9
+    bindings:
+      "": *oam-space
+      public: *ceph-public-space
+      cluster: *ceph-cluster-space
+    options:
+      osd-devices: *osd-devices
+      osd-journal: *osd-journal
+      osd-reformat: 'yes'
+      source: *openstack-origin
+      customize-failure-domain: True
+      autotune: true
+      aa-profile-mode: complain
+    to:
+    - '0'
+    - '1'
+    - '2'
+    - '3'
+    - '4'
+    - '5'
+    - '6'
+    - '7'
+    - '8'
+  ceph-radosgw:
+    charm: cs:~openstack-charmers-next/xenial/ceph-radosgw
+    num_units: 3
+    constraints: *ceph-access-constr
+    bindings:
+      "": *oam-space
+      public: *public-space
+      admin: *admin-space
+      internal: *internal-space
+      mon: *ceph-public-space
+    options:
+      source: *openstack-origin
+      vip: *rados-gateway-vip
+      region: *openstack-region
+      restrict-ceph-pools: False
+      haproxy-server-timeout: *haproxy-server-timeout
+      haproxy-client-timeout: *haproxy-client-timeout
+      haproxy-queue-timeout: *haproxy-queue-timeout
+      haproxy-connect-timeout: *haproxy-connect-timeout
+    to:
+    - lxd:0
+    - lxd:1
+    - lxd:2
+  aodh:
+    charm: cs:~openstack-charmers-next/xenial/aodh
+    num_units: 3
+    bindings:
+      "": *oam-space
+      public: *public-space
+      admin: *admin-space
+      internal: *internal-space
+      shared-db: *internal-space
+    options:
+      worker-multiplier: *worker-multiplier
+      openstack-origin: *openstack-origin
+      region: *openstack-region
+      vip: *aodh-vip
+      haproxy-server-timeout: *haproxy-server-timeout
+      haproxy-client-timeout: *haproxy-client-timeout
+      haproxy-queue-timeout: *haproxy-queue-timeout
+      haproxy-connect-timeout: *haproxy-connect-timeout
+      use-internal-endpoints: True
+    to:
+    - lxd:3
+    - lxd:5
+    - lxd:6
+  gnocchi:
+    charm: cs:~openstack-charmers-next/xenial/gnocchi
+    num_units: 3
+    bindings:
+      "": *oam-space
+      public: *public-space
+      admin: *admin-space
+      internal: *internal-space
+      shared-db: *internal-space
+      storage-ceph: *ceph-public-space
+      coordinator-memcached: *internal-space
+    options:
+      worker-multiplier: *worker-multiplier
+      openstack-origin: *openstack-origin
+      region: *openstack-region
+      vip: *gnocchi-vip
+      haproxy-server-timeout: *haproxy-server-timeout
+      haproxy-client-timeout: *haproxy-client-timeout
+      haproxy-queue-timeout: *haproxy-queue-timeout
+      haproxy-connect-timeout: *haproxy-connect-timeout
+      use-internal-endpoints: True
+    to:
+    - mongodb/0
+    - mongodb/1
+    - mongodb/2
+  cinder:
+    charm: cs:~openstack-charmers-next/xenial/cinder
+    num_units: 3
+    constraints: *ceph-access-constr
+    bindings:
+      "": *oam-space
+      public: *public-space
+      admin: *admin-space
+      internal: *internal-space
+      shared-db: *internal-space
+    options:
+      worker-multiplier: *worker-multiplier
+      openstack-origin: *openstack-origin
+      block-device: None
+      glance-api-version: 2
+      vip: *cinder-vip
+      use-internal-endpoints: True
+      region: *openstack-region
+      haproxy-server-timeout: *haproxy-server-timeout
+      haproxy-client-timeout: *haproxy-client-timeout
+      haproxy-queue-timeout: *haproxy-queue-timeout
+      haproxy-connect-timeout: *haproxy-connect-timeout
+    to:
+    - lxd:0
+    - lxd:1
+    - lxd:2
+  cinder-ceph:
+    charm: cs:~openstack-charmers-next/xenial/cinder-ceph
+    num_units: 0
+    options:
+      restrict-ceph-pools: False
+  glance:
+    charm: cs:~openstack-charmers-next/xenial/glance
+    constraints: *ceph-access-constr
+    bindings:
+      "": *oam-space
+      public: *public-space
+      admin: *admin-space
+      internal: *internal-space
+      shared-db: *internal-space
+    options:
+      worker-multiplier: *worker-multiplier
+      openstack-origin: *openstack-origin
+      vip: *glance-vip
+      use-internal-endpoints: True
+      restrict-ceph-pools: False
+      region: *openstack-region
+      haproxy-server-timeout: 180000  # XXX: 1751842
+      haproxy-client-timeout: 180000
+      haproxy-queue-timeout: *haproxy-queue-timeout
+      haproxy-connect-timeout: *haproxy-connect-timeout
+    num_units: 3
+    to:
+    - lxd:0
+    - lxd:1
+    - lxd:2
+  keystone:
+    charm: cs:~openstack-charmers-next/xenial/keystone
+    num_units: 3
+    bindings:
+      "": *oam-space
+      public: *public-space
+      admin: *admin-space
+      internal: *internal-space
+      shared-db: *internal-space
+    options:
+      admin-password: openstack
+      worker-multiplier: *worker-multiplier
+      openstack-origin: *openstack-origin
+      vip: *keystone-vip
+      region: *openstack-region
+      preferred-api-version: 3
+      haproxy-server-timeout: *haproxy-server-timeout
+      haproxy-client-timeout: *haproxy-client-timeout
+      haproxy-queue-timeout: *haproxy-queue-timeout
+      haproxy-connect-timeout: *haproxy-connect-timeout
+    to:
+    - lxd:0
+    - lxd:1
+    - lxd:2
+  mongodb:
+    charm: cs:xenial/mongodb
+    num_units: 3
+    constraints: *oam-space-constr
+    bindings:
+      "": *internal-space
+    options:
+      backups_enabled: True
+      backup_directory: /var/backups
+    to:
+    - lxd:3
+    - lxd:5
+    - lxd:6
+  mysql:
+    charm: cs:~openstack-charmers-next/xenial/percona-cluster
+    num_units: 3
+    bindings:
+      "": *oam-space
+      cluster: *internal-space
+      shared-db: *internal-space
+    options:
+      source: *openstack-origin
+      innodb-buffer-pool-size: 512M
+      vip: *mysql-vip
+      wait-timeout: 180
+      min-cluster-size: 3
+      enable-binlogs: True
+      performance-schema: True
+      max-connections: *mysql-connections
+    to:
+    - lxd:0
+    - lxd:1
+    - lxd:2
+  neutron-api:
+    charm: cs:~openstack-charmers-next/xenial/neutron-api
+    num_units: 3
+    bindings:
+      "": *oam-space
+      public: *public-space
+      admin: *admin-space
+      internal: *internal-space
+      shared-db: *internal-space
+    options:
+      worker-multiplier: *worker-multiplier
+      openstack-origin: *openstack-origin
+      region: *openstack-region
+      flat-network-providers: physnet1
+      vlan-ranges:
+      neutron-security-groups: True
+      overlay-network-type: vxlan gre
+      use-internal-endpoints: True
+      vip: *neutron-api-vip
+      enable-l3ha: True
+      dhcp-agents-per-network: 2
+      enable-ml2-port-security: True
+      default-tenant-network-type: vxlan
+      l2-population: False
+      haproxy-server-timeout: *haproxy-server-timeout
+      haproxy-client-timeout: *haproxy-client-timeout
+      haproxy-queue-timeout: *haproxy-queue-timeout
+      haproxy-connect-timeout: *haproxy-connect-timeout
+    to:
+    - lxd:3
+    - lxd:5
+    - lxd:6
+  neutron-gateway:
+    charm: cs:~openstack-charmers-next/xenial/neutron-gateway
+    num_units: 2
+    bindings:
+      "": *oam-space
+      data: *overlay-space
+    options:
+      worker-multiplier: *worker-multiplier
+      openstack-origin: *openstack-origin
+      bridge-mappings: physnet1:br-data
+      data-port: *data-port
+      aa-profile-mode: enforce
+    to:
+    - 5
+    - 6
+  neutron-openvswitch:
+    charm: cs:~openstack-charmers-next/xenial/neutron-openvswitch
+    num_units: 0
+    bindings:
+      data: *overlay-space
+    options:
+      worker-multiplier: *worker-multiplier
+      bridge-mappings: physnet1:br-data
+      prevent-arp-spoofing: True
+      firewall-driver: openvswitch
+  nova-cloud-controller:
+    charm: cs:~openstack-charmers-next/xenial/nova-cloud-controller
+    num_units: 3
+    bindings:
+      "": *oam-space
+      public: *public-space
+      admin: *admin-space
+      internal: *internal-space
+      shared-db: *internal-space
+    options:
+      worker-multiplier: *worker-multiplier
+      openstack-origin: *openstack-origin
+      network-manager: Neutron
+      region: *openstack-region
+      vip: *nova-cc-vip
+      console-access-protocol: novnc
+      console-proxy-ip: local
+      use-internal-endpoints: True
+      single-nova-consoleauth: True
+      haproxy-server-timeout: *haproxy-server-timeout
+      haproxy-client-timeout: *haproxy-client-timeout
+      haproxy-queue-timeout: *haproxy-queue-timeout
+      haproxy-connect-timeout: *haproxy-connect-timeout
+    to:
+    - lxd:3
+    - lxd:5
+    - lxd:6
+  nova-compute-kvm:
+    charm: cs:~openstack-charmers-next/xenial/nova-compute
+    num_units: 5
+    bindings:
+      "": *oam-space
+      internal: *internal-space
+    options:
+      openstack-origin: *openstack-origin
+      enable-live-migration: True
+      enable-resize: True
+      migration-auth-type: ssh
+      use-internal-endpoints: True
+      libvirt-image-backend: qcow2
+      restrict-ceph-pools: False
+      aa-profile-mode: enforce
+      virt-type: kvm
+    to:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+  nova-compute-lxd:
+    charm: cs:~openstack-charmers-next/xenial/nova-compute
+    num_units: 2
+    bindings:
+      "": *oam-space
+      internal: *internal-space
+    options:
+      openstack-origin: *openstack-origin
+      enable-live-migration: False
+      use-internal-endpoints: True
+      restrict-ceph-pools: False
+      aa-profile-mode: enforce
+      virt-type: lxd
+    to:
+    - 7
+    - 8
+  ntp:
+    charm: cs:~openstack-charmers-next/xenial/ntp
+    num_units: 0
+    options:
+      source: *ntp-source
+  openstack-dashboard:
+    charm: cs:~openstack-charmers-next/xenial/openstack-dashboard
+    num_units: 3
+    constraints: *oam-space-constr
+    bindings:
+      "": *public-space
+      shared-db: *internal-space
+    options:
+      openstack-origin: *openstack-origin
+      webroot: "/"
+      secret: "encryptcookieswithme"
+      vip: *dashboard-vip
+      neutron-network-l3ha: True
+      neutron-network-lb: True
+      neutron-network-firewall: False
+      cinder-backup: False
+      password-retrieve: True
+      endpoint-type: publicURL
+      haproxy-server-timeout: *haproxy-server-timeout
+      haproxy-client-timeout: *haproxy-client-timeout
+      haproxy-queue-timeout: *haproxy-queue-timeout
+      haproxy-connect-timeout: *haproxy-connect-timeout
+    to:
+    - lxd:3
+    - lxd:5
+    - lxd:6
+  rabbitmq-server:
+    charm: cs:~openstack-charmers-next/xenial/rabbitmq-server
+    bindings:
+      "": *oam-space
+      amqp: *internal-space
+      cluster: *internal-space
+    options:
+      source: *openstack-origin
+      min-cluster-size: 3
+    num_units: 3
+    to:
+    - lxd:3
+    - lxd:5
+    - lxd:6
+  heat:
+    charm: cs:~openstack-charmers-next/xenial/heat
+    num_units: 3
+    bindings:
+      "": *oam-space
+      public: *public-space
+      admin: *admin-space
+      internal: *internal-space
+      shared-db: *internal-space
+    options:
+      worker-multiplier: *worker-multiplier
+      openstack-origin: *openstack-origin
+      region: *openstack-region
+      vip: *heat-vip
+      use-internal-endpoints: True
+    to:
+    - lxd:0
+    - lxd:1
+    - lxd:2
+  designate:
+    charm: cs:~openstack-charmers-next/xenial/designate
+    num_units: 3
+    bindings:
+      "": *oam-space
+      public: *public-space
+      admin: *admin-space
+      internal: *internal-space
+      shared-db: *internal-space
+    options:
+      openstack-origin: *openstack-origin
+      region: *openstack-region
+      vip: *designate-vip
+      haproxy-server-timeout: *haproxy-server-timeout
+      haproxy-client-timeout: *haproxy-client-timeout
+      haproxy-queue-timeout: *haproxy-queue-timeout
+      haproxy-connect-timeout: *haproxy-connect-timeout
+      use-internal-endpoints: True
+    to:
+    - lxd:3
+    - lxd:5
+    - lxd:6
+  designate-bind:
+    charm: cs:~openstack-charmers-next/xenial/designate-bind
+    num_units: 2
+    constraints: *oam-space-constr
+    bindings:
+      "": *internal-space
+    options:
+      use-internal-endpoints: True
+    to:
+    - lxd:1
+    - lxd:2
+  memcached:
+    charm: cs:xenial/memcached
+    num_units: 2
+    constraints: *oam-space-constr
+    bindings:
+      "": *internal-space
+    options:
+      allow-ufw-ip6-softfail: True
+    to:
+    - designate-bind/0
+    - designate-bind/1
+  ceilometer:
+    charm: cs:~openstack-charmers-next/xenial/ceilometer
+    num_units: 3
+    bindings:
+      "": *oam-space
+      public: *public-space
+      admin: *admin-space
+      internal: *internal-space
+    options:
+      openstack-origin: *openstack-origin
+      region: *openstack-region
+      vip: *ceilometer-vip
+      use-internal-endpoints: True
+      haproxy-server-timeout: *haproxy-server-timeout
+      haproxy-client-timeout: *haproxy-client-timeout
+      haproxy-queue-timeout: *haproxy-queue-timeout
+      haproxy-connect-timeout: *haproxy-connect-timeout
+    to:
+    - lxd:3
+    - lxd:5
+    - lxd:6
+  ceilometer-agent:
+    charm: cs:~openstack-charmers-next/xenial/ceilometer-agent
+    num_units: 0
+    options:
+      use-internal-endpoints: True
+relations:
+  - [ aodh, mysql ]
+  - [ aodh, keystone ]
+  - [ aodh, rabbitmq-server ]
+  - [ ceph-osd, ceph-mon ]
+  - [ ceph-radosgw, ceph-mon ]
+  - [ keystone, ceph-radosgw ]
+  - [ nova-compute-kvm, ntp ]
+  - [ nova-compute-lxd, ntp ]
+  - [ neutron-gateway, ntp ]
+  - [ ceph-radosgw, hacluster-radosgw ]
+  - [ mysql, hacluster-mysql ]
+  - [ keystone, hacluster-keystone ]
+  - [ aodh, hacluster-aodh ]
+  - [ glance, hacluster-glance ]
+  - [ gnocchi, hacluster-gnocchi ]
+  - [ cinder, hacluster-cinder ]
+  - [ designate, hacluster-designate ]
+  - [ neutron-api, hacluster-neutron ]
+  - [ nova-cloud-controller, hacluster-nova ]
+  - [ openstack-dashboard, hacluster-horizon ]
+  - [ heat, hacluster-heat ]
+  - [ keystone, mysql ]
+  - [ "ceilometer:identity-service", "keystone:identity-service" ]
+  - [ ceilometer, mongodb ]
+  - [ ceilometer, rabbitmq-server ]
+  - [ ceilometer, hacluster-ceilometer ]
+  - [ cinder, mysql ]
+  - [ cinder, keystone ]
+  - [ cinder-ceph, ceph-mon ]
+  - [ cinder-ceph, cinder ]
+  - [ cinder, rabbitmq-server ]
+  - [ designate, mysql ]
+  - [ designate, designate-bind ]
+  - [ designate, keystone ]
+  - [ designate, rabbitmq-server ]
+  - [ designate, memcached ]
+  - [ glance, mysql ]
+  - [ glance, keystone ]
+  - [ glance, ceph-mon ]
+  - [ glance, rabbitmq-server ]
+  - [ gnocchi, mysql ]
+  - [ gnocchi, rabbitmq-server ]
+  - [ gnocchi, keystone ]
+  - [ gnocchi, ceph-mon ]
+  - [ gnocchi, memcached ]
+  - [ gnocchi, ceilometer ]
+  - [ heat, mysql ]
+  - [ heat, keystone ]
+  - [ heat, rabbitmq-server ]
+  - [ nova-cloud-controller, mysql ]
+  - [ nova-cloud-controller, rabbitmq-server ]
+  - [ nova-cloud-controller, keystone ]
+  - [ nova-cloud-controller, glance ]
+  - [ neutron-api, mysql ]
+  - [ neutron-api, rabbitmq-server ]
+  - [ neutron-api, nova-cloud-controller ]
+  - [ neutron-api, keystone ]
+  - [ neutron-gateway, nova-cloud-controller ]
+  - [ "neutron-gateway:amqp", "rabbitmq-server:amqp" ]
+  - [ "neutron-gateway:neutron-plugin-api", "neutron-api:neutron-plugin-api" ]
+  - [ "neutron-openvswitch:amqp", "rabbitmq-server:amqp" ]
+  - [ neutron-openvswitch, rabbitmq-server ]
+  - [ neutron-openvswitch, neutron-api ]
+  - [ "nova-compute-kvm:amqp", "rabbitmq-server:amqp" ]
+  - [ "nova-compute-lxd:amqp", "rabbitmq-server:amqp" ]
+  - [ nova-compute-kvm, ceph-mon ]
+  - [ nova-compute-kvm, cinder-ceph ]
+  - [ nova-compute-kvm, glance ]
+  - [ nova-compute-lxd, glance ]
+#  - [ nova-compute-kvm, designate ]
+#  - [ nova-compute-lxd, designate ]
+  - [ nova-compute-kvm, neutron-openvswitch ]
+  - [ nova-compute-lxd, neutron-openvswitch ]
+  - [ nova-compute-kvm, nova-cloud-controller ]
+  - [ nova-compute-lxd, nova-cloud-controller ]
+  - [ "openstack-dashboard:identity-service", keystone ]
+  - [ openstack-dashboard, mysql ]
+  - [ ceilometer-agent, nova-compute-kvm ]
+  - [ ceilometer-agent, nova-compute-lxd ]
+  - [ ceilometer-agent, ceilometer ]
+  - [ "glance:image-service", "cinder:image-service" ]
