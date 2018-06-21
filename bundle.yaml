@@ -528,7 +528,7 @@ applications:
     - lxd:1
     - lxd:2
   designate:
-    charm: cs:~openstack-charmers-next/xenial/designate
+    charm: cs:xenial/designate
     num_units: 3
     bindings:
       "": *oam-space
@@ -550,7 +550,7 @@ applications:
     - lxd:5
     - lxd:6
   designate-bind:
-    charm: cs:~openstack-charmers-next/xenial/designate-bind
+    charm: cs:xenial/designate-bind
     num_units: 2
     constraints: *oam-space-constr
     bindings:
