@@ -1,3 +1,4 @@
+# idobos change1
 iseries: xenial
 variables:
   openstack-origin:    &openstack-origin    cloud:xenial-pike
